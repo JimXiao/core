@@ -1313,18 +1313,25 @@ def acceptance(ctx):
 
 	return pipelines
 
-def sonarAnalysis(ctx):
+def sonarAnalysis(ctx, phpVersion = '7.4'):
 	result = {
 		'kind': 'pipeline',
 		'type': 'docker',
 		'name': 'sonar-analysis',
-		'clone': {
-			'disable': True
+		'workspace' : {
+			'base': '/drone',
+			'path': 'src'
 		},
-		'steps': [
+		'steps':
+			cacheRestore() +
+			composerInstall(phpVersion) +
+			vendorbinInstall(phpVersion) +
+			yarnInstall(phpVersion) +
+			installServer(phpVersion, 'sqlite') +
+		[
 			{
 				'name': 'get-test-results',
-				'image': 'owncloudci/php',
+				'image': 'owncloudci/php:%s' % phpVersion,
 				'pull': 'always',
 				'environment': {
 					'SHARED_STORAGE_BASE': {
@@ -1907,7 +1914,7 @@ def databaseServiceForFederation(db, suffix):
 		}
 	}]
 
-def installServer(phpVersion, db, logLevel, ssl = False, federatedServerNeeded = False, proxyNeeded = False):
+def installServer(phpVersion, db, logLevel = '2', ssl = False, federatedServerNeeded = False, proxyNeeded = False):
 	return [{
 		'name': 'install-server',
 		'image': 'owncloudci/php:%s' % phpVersion,
